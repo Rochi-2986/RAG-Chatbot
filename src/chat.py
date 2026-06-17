@@ -11,7 +11,7 @@ genai.configure(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
-llm = genai.GenerativeModel("gemini-3.5-flash")
+llm = genai.GenerativeModel("gemini-2.5-flash")
 
 print("Loading vector database...")
 
