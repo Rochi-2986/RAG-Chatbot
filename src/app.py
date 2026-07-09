@@ -1,11 +1,15 @@
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 import shutil
+import os
 
 from src.rag import ask_question
 from src.ingest_utils import create_vectorstore
+
 from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,8 +18,11 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+
 class Question(BaseModel):
     question: str
+    pdf: str
+
 
 @app.get("/")
 def home():
@@ -23,13 +30,18 @@ def home():
         "message": "RAG Chatbot API"
     }
 
+
 @app.get("/health")
 def health():
     return {
         "status": "healthy"
     }
+
+
 @app.post("/upload")
 async def upload_pdf(file: UploadFile = File(...)):
+
+    os.makedirs("documents", exist_ok=True)
 
     pdf_path = f"documents/{file.filename}"
 
@@ -44,9 +56,13 @@ async def upload_pdf(file: UploadFile = File(...)):
         "chunks": chunks
     }
 
+
 @app.post("/chat")
 def chat(data: Question):
 
-    result = ask_question(data.question)
+    result = ask_question(
+        data.question,
+        data.pdf
+    )
 
     return result

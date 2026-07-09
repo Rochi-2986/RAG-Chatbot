@@ -19,9 +19,7 @@ genai.configure(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
-llm = genai.GenerativeModel(
-    "gemini-2.5-flash"
-)
+llm = genai.GenerativeModel("gemini-2.5-flash")
 
 embeddings = HuggingFaceEmbeddings(
     model_name="BAAI/bge-small-en-v1.5"
@@ -33,15 +31,24 @@ reranker = CrossEncoder(
 
 chat_history = []
 
-def ask_question(query):
-    if not os.path.exists("vectorstore"):
-         return {
-        "answer": "Please upload a PDF first.",
-        "sources": []
-    }
+
+def ask_question(query, pdf_name):
+
+    pdf_folder = os.path.splitext(pdf_name)[0]
+
+    vectorstore_path = os.path.join(
+        "vectorstores",
+        pdf_folder
+    )
+
+    if not os.path.exists(vectorstore_path):
+        return {
+            "answer": "Please upload a PDF first.",
+            "sources": []
+        }
 
     db = FAISS.load_local(
-        "vectorstore",
+        vectorstore_path,
         embeddings,
         allow_dangerous_deserialization=True
     )
@@ -49,9 +56,14 @@ def ask_question(query):
     all_chunks = []
     bm25 = None
 
-    if os.path.exists("chunks.pkl"):
+    chunks_path = os.path.join(
+        vectorstore_path,
+        "chunks.pkl"
+    )
 
-        with open("chunks.pkl", "rb") as f:
+    if os.path.exists(chunks_path):
+
+        with open(chunks_path, "rb") as f:
             all_chunks = pickle.load(f)
 
         tokenized_chunks = [
@@ -64,6 +76,7 @@ def ask_question(query):
     history_text = ""
 
     for item in chat_history:
+
         history_text += f"""
 User: {item['question']}
 Assistant: {item['answer']}
@@ -72,9 +85,8 @@ Assistant: {item['answer']}
     faiss_docs = db.max_marginal_relevance_search(
         query,
         k=10,
-        fetch_k=50
+        fetch_k=40
     )
-
 
     bm25_results = []
 
@@ -83,9 +95,8 @@ Assistant: {item['answer']}
         bm25_results = bm25.get_top_n(
             query.lower().split(),
             all_chunks,
-            n=5
+            n=10
         )
-
 
     candidate_docs = []
     seen = set()
@@ -98,13 +109,14 @@ Assistant: {item['answer']}
             candidate_docs.append(doc)
             seen.add(text)
 
+    print("Candidate documents:", len(candidate_docs))
+
     if len(candidate_docs) == 0:
 
         return {
             "answer": "I could not find that information in the uploaded document.",
             "sources": []
         }
-
 
     pairs = [
         (query, doc.page_content)
@@ -121,34 +133,111 @@ Assistant: {item['answer']}
 
     docs = [
         doc
-        for doc, score in ranked[:8]
+        for doc, score in ranked[:12]
     ]
-
 
     context = ""
     sources = []
+    seen_pages = set()
 
     for i, doc in enumerate(docs):
 
         page = doc.metadata.get("page")
+        preview = doc.page_content.replace("\n", " ")
+        if len(preview) > 300:
+            preview = preview[:300] + "..."
 
-        if page is not None:
-            sources.append(page + 1)
-
+        if page is not None and page not in seen_pages:
+            sources.append({
+                "page": page + 1,
+                "file": pdf_name,
+                "preview": preview
+            })
+            seen_pages.add(page)
+        
         context += f"\n[Chunk {i+1}]\n"
         context += doc.page_content
         context += "\n"
 
+    print("Context length:", len(context))
     print("\nRETRIEVED CONTEXT:\n")
     print(context[:3000])
 
     print("\nQUESTION:")
     print(query)
 
+    q = query.lower()
+
+    format_instruction = ""
+
+    if any(word in q for word in [
+        "bullet",
+        "bullets",
+        "point",
+        "points",
+        "list"
+    ]):
+
+        format_instruction = """
+Return ONLY markdown bullet points.
+
+Example:
+
+- Point 1
+- Point 2
+- Point 3
+
+Do NOT write paragraphs.
+"""
+
+    elif any(word in q for word in [
+        "number",
+        "numbered",
+        "steps"
+    ]):
+
+        format_instruction = """
+Return a numbered list.
+
+Example:
+
+1. First point
+2. Second point
+3. Third point
+"""
+
+    elif "table" in q:
+
+        format_instruction = """
+Return the answer as a markdown table.
+"""
+
+    elif "compare" in q:
+
+        format_instruction = """
+Return the answer as a comparison table.
+"""
+
+    elif "summary" in q:
+
+        format_instruction = """
+Return a short summary in one paragraph.
+"""
+
+    else:
+
+        format_instruction = """
+Return a clear explanation in paragraphs.
+"""
+
     prompt = f"""
 You are a Retrieval-Augmented Generation (RAG) assistant.
 
-Use ONLY the information present in the provided context.
+Use the retrieved context as the PRIMARY source.
+
+If the retrieved context contains only partial information, you may use widely accepted general knowledge to complete the explanation.
+
+Never contradict the retrieved context.
 
 Conversation History:
 {history_text}
@@ -159,29 +248,34 @@ Context:
 Question:
 {query}
 
+Formatting Instructions:
+{format_instruction}
+
 Rules:
 
-1. Answer ONLY from the context.
-2. Combine information from multiple chunks when needed.
-3. Do NOT invent facts.
-4. If the answer is not found, respond exactly:
+1. Use the retrieved context as your primary source.
+2. Combine information from multiple retrieved chunks when appropriate.
+3. If the context provides only partial information, supplement it with widely accepted general knowledge.
+4. Never contradict the retrieved context.
+5. If the answer cannot be determined from either the context or common knowledge, reply exactly:
 
 I could not find that information in the uploaded document.
 
-5. For summaries, summarize the retrieved content.
-6. Answer clearly and naturally.
+6. Follow the formatting instructions exactly.
 
 Answer:
 """
 
+    print("Prompt length:", len(prompt))
+
     try:
 
         response = llm.generate_content(
-    prompt,
-    generation_config={
-        "temperature": 0.1
-    }
-)
+            prompt,
+            generation_config={
+                "temperature": 0.1
+            }
+        )
 
         answer = response.text
 
@@ -189,10 +283,12 @@ Answer:
 
         return {
             "answer": "Gemini quota exceeded. Please try again later.",
-            "sources": sorted(list(set(sources)))
+            "sources": sources
         }
 
     except Exception as e:
+
+        print(e)
 
         return {
             "answer": f"Error: {str(e)}",
@@ -210,7 +306,11 @@ Answer:
     print("\nANSWER:\n")
     print(answer)
 
+    if sources:
+        print("Last source:", sources[-1])
+
     return {
         "answer": answer,
-        "sources": sorted(list(set(sources)))
+        "sources": sources
     }
+    

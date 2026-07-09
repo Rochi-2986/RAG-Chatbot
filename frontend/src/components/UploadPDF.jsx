@@ -1,7 +1,9 @@
 import { useState } from "react";
 import axios from "axios";
 
-function UploadPDF({ setCurrentPdf }) {
+function UploadPDF({ 
+  setCurrentPdf,
+}) {
 
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -32,6 +34,7 @@ function UploadPDF({ setCurrentPdf }) {
       setCurrentPdf(
         res.data.filename
       );
+     
 
       alert(
         `${res.data.message}\n\nChunks: ${res.data.chunks}`
@@ -41,7 +44,7 @@ function UploadPDF({ setCurrentPdf }) {
 
       console.error(err);
 
-      alert("Upload failed");
+      alert(err.message);
 
     } finally {
 

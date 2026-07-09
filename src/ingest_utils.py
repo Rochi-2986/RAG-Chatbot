@@ -1,3 +1,6 @@
+import os
+import pickle
+
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -10,7 +13,6 @@ import pytesseract
 pytesseract.pytesseract.tesseract_cmd = (
     r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 )
-
 
 embeddings = HuggingFaceEmbeddings(
     model_name="BAAI/bge-small-en-v1.5"
@@ -58,29 +60,39 @@ def create_vectorstore(pdf_path):
 
     chunks = splitter.split_documents(documents)
 
+    filename = os.path.basename(pdf_path)
+
+    for chunk in chunks:
+        chunk.metadata["source_file"] = filename
+
     print("Chunks created:", len(chunks))
 
-    import pickle
+    pdf_name = os.path.splitext(filename)[0]
 
-    with open("chunks.pkl", "wb") as f:
-        pickle.dump(chunks, f)
+    save_path = os.path.join(
+        "vectorstores",
+        pdf_name
+    )
 
-    import os
+    os.makedirs(save_path, exist_ok=True)
 
     db = FAISS.from_documents(
         chunks,
         embeddings
     )
 
-    print("Saving vectorstore...")
+    db.save_local(save_path)
 
-    db.save_local("vectorstore")
+    chunks_path = os.path.join(
+        save_path,
+        "chunks.pkl"
+    )
+
+    with open(chunks_path, "wb") as f:
+        pickle.dump(chunks, f)
 
     print("Vectorstore saved!")
-
     print("Current directory:", os.getcwd())
-    print("Vectorstore exists:", os.path.exists("vectorstore"))
-    print("FAISS file exists:", os.path.exists("vectorstore/index.faiss"))
-    print("PKL file exists:", os.path.exists("vectorstore/index.pkl"))
+    print("Saved to:", save_path)
 
     return len(chunks)

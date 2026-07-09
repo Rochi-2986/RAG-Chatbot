@@ -1,0 +1,59 @@
+.sidebar{
+
+    width:260px;
+
+    height:100vh;
+
+    background:#0f172a;
+
+    color:white;
+
+    display:flex;
+
+    flex-direction:column;
+
+    padding:20px;
+
+}
+
+.new-chat-btn{
+
+    background:#2563eb;
+
+    color:white;
+
+    border:none;
+
+    border-radius:8px;
+
+    padding:12px;
+
+    margin-bottom:20px;
+
+    cursor:pointer;
+
+}
+
+.chat-item{
+
+    padding:12px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    margin-bottom:8px;
+
+}
+
+.chat-item:hover{
+
+    background:#1e293b;
+
+}
+
+.active{
+
+    background:#2563eb;
+
+}
