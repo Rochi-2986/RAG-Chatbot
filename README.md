@@ -28,18 +28,6 @@ A modern **Retrieval-Augmented Generation (RAG)** chatbot that allows users to u
 
 ---
 
-#  Demo
-
-> Add screenshots or GIFs here.
-
-Example:
-
-```
-frontend/screenshots/demo.png
-```
-
----
-
 #  System Architecture
 
 ```
