@@ -422,5 +422,3 @@ B.Tech Information Technology
 Indian Institute of Information Technology Allahabad (IIIT Allahabad)
 
 GitHub: https://github.com/Rochi-2986
-
-LinkedIn: https://www.linkedin.com/in/Rochi-2986/
