@@ -1,153 +1,208 @@
-# RAG Chatbot using FastAPI, FAISS, Gemini & React
+#  RAG PDF Chatbot
 
-## Overview
-
-This project is a Retrieval-Augmented Generation (RAG) chatbot that allows users to upload PDF documents and ask questions about their contents. The system retrieves relevant information from the uploaded document using semantic search and generates context-aware responses using Google's Gemini LLM.
-
-The chatbot supports both text-based PDFs and scanned PDFs through OCR, making it suitable for academic notes, reports, research papers, manuals, and other document collections.
+A modern **Retrieval-Augmented Generation (RAG)** chatbot that allows users to upload PDF documents and ask natural language questions. The system combines semantic search, keyword retrieval, re-ranking, OCR, and Google's Gemini LLM to provide accurate, context-aware answers with source citations.
 
 ---
 
-## Features
+#  Features
 
-* PDF document upload
-* Automatic text extraction
-* OCR support for scanned PDFs
-* Semantic search using FAISS vector database
-* Hybrid retrieval using:
-
-  * FAISS Vector Search
-  * BM25 Keyword Search
-  * Cross-Encoder Re-ranking
-* Conversational question answering
-* Source page references
-* React-based chat interface
-* FastAPI backend
-* Gemini 2.5 Flash integration
-
----
-
-## Tech Stack
-
-### Backend
-
-* FastAPI
-* LangChain
-* FAISS
-* HuggingFace Embeddings
-* Sentence Transformers
-* Gemini API
-* BM25
-* PyPDF
-* Tesseract OCR
-
-### Frontend
-
-* React
-* Vite
-* Axios
-
-### Models
-
-* Embedding Model:
-
-  * BAAI/bge-small-en-v1.5
-
-* Re-ranking Model:
-
-  * cross-encoder/ms-marco-MiniLM-L-6-v2
-
-* LLM:
-
-  * Gemini 2.5 Flash
+-  Upload multiple PDF documents
+-  Separate chat history for each uploaded PDF
+-  Hybrid Retrieval
+  - FAISS Semantic Search
+  - BM25 Keyword Search
+  - Cross-Encoder Re-ranking
+-  Gemini 2.5 Flash for answer generation
+-  Source page citations
+-  Clickable source previews
+-  OCR support for scanned PDFs
+-  Automatic formatting
+  - Bullet Points
+  - Numbered Lists
+  - Tables
+  - Paragraph Summaries
+-  FastAPI backend
+-  Modern React Dark UI
+-  Auto-scroll chat
+-  Persistent chat history using Local Storage
 
 ---
 
-## System Architecture
+#  Demo
 
-1. User uploads a PDF.
-2. PDF text is extracted.
-3. If text extraction fails, OCR is applied.
-4. Document is split into chunks.
-5. Chunks are embedded using BGE embeddings.
-6. Embeddings are stored in FAISS.
-7. User asks a question.
-8. FAISS retrieves semantically similar chunks.
-9. BM25 retrieves keyword-based chunks.
-10. Cross-Encoder re-ranks retrieved results.
-11. Top chunks are sent to Gemini.
-12. Gemini generates a grounded response.
-13. Sources are displayed to the user.
+> Add screenshots or GIFs here.
+
+Example:
+
+```
+frontend/screenshots/demo.png
+```
 
 ---
 
-## Project Structure
+#  System Architecture
 
-```text
+```
+                  PDF Upload
+                       │
+                       ▼
+               Text Extraction
+                       │
+          ┌────────────┴────────────┐
+          │                         │
+      Text PDF                Scanned PDF
+          │                         │
+          ▼                         ▼
+     PyPDFLoader                  OCR
+                              (Tesseract)
+          │
+          ▼
+      Text Chunking
+          │
+          ▼
+ HuggingFace Embeddings
+          │
+          ▼
+      FAISS Vector DB
+          │
+ ┌────────┴─────────┐
+ │                  │
+ ▼                  ▼
+FAISS           BM25 Search
+Search
+ │                  │
+ └────────┬─────────┘
+          ▼
+ Cross Encoder Re-ranking
+          ▼
+     Top Relevant Chunks
+          ▼
+     Gemini 2.5 Flash
+          ▼
+Formatted Response + Sources
+```
+
+---
+
+#  Tech Stack
+
+## Backend
+
+- FastAPI
+- LangChain
+- FAISS
+- Google Gemini API
+- BM25
+- Sentence Transformers
+- HuggingFace Embeddings
+- Tesseract OCR
+- PyPDFLoader
+
+---
+
+## Frontend
+
+- React
+- Vite
+- Axios
+- CSS3
+
+---
+
+## Models
+
+### Embedding Model
+
+```
+BAAI/bge-small-en-v1.5
+```
+
+### Re-ranking Model
+
+```
+cross-encoder/ms-marco-MiniLM-L-6-v2
+```
+
+### LLM
+
+```
+Gemini 2.5 Flash
+```
+
+---
+
+#  Project Structure
+
+```
 rag-chatbot/
+
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── ChatBox.jsx
-│   │   │   ├── Message.jsx
-│   │   │   └── UploadPDF.jsx
-│   │   ├── App.jsx
-│   │   └── App.css
 │   │
-│   └── package.json
+│   ├── components/
+│   │      ChatBox.jsx
+│   │      UploadPDF.jsx
+│   │      SourceCard.jsx
+│   │
+│   ├── App.jsx
+│   ├── App.css
+│   └── main.jsx
 │
 ├── src/
-│   ├── app.py
-│   ├── rag.py
-│   ├── ingest_utils.py
-│   ├── ingest.py
-│   ├── ocr_utils.py
-│   └── chat.py
+│      app.py
+│      rag.py
+│      ingest_utils.py
+│
+├── documents/
+│
+├── vectorstores/
 │
 ├── requirements.txt
-├── .gitignore
+│
+├── .env
+│
 └── README.md
 ```
 
 ---
 
-## Installation
+#  Installation
 
-### Clone Repository
+Clone the repository
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/rag-chatbot.git
 cd rag-chatbot
 ```
 
-### Create Virtual Environment
+---
+
+## Create Virtual Environment
+
+Windows
 
 ```bash
 python -m venv venv
 ```
 
-### Activate Environment
-
-Windows:
+Activate
 
 ```bash
 venv\Scripts\activate
 ```
 
-Linux/Mac:
+---
 
-```bash
-source venv/bin/activate
-```
-
-### Install Backend Dependencies
+## Install Backend Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Install Frontend Dependencies
+---
+
+## Install Frontend Dependencies
 
 ```bash
 cd frontend
@@ -156,121 +211,228 @@ npm install
 
 ---
 
-## Environment Variables
+#  Environment Variables
 
-Create a `.env` file:
+Create a `.env` file.
 
-```env
+```
 GEMINI_API_KEY=YOUR_API_KEY
 ```
 
 ---
 
-## Running the Backend
+#  Run Backend
 
 ```bash
 uvicorn src.app:app --reload
 ```
 
-Backend runs on:
+Backend
 
-```text
+```
 http://localhost:8000
 ```
 
-Swagger Docs:
+Swagger Docs
 
-```text
+```
 http://localhost:8000/docs
 ```
 
 ---
 
-## Running the Frontend
+#  Run Frontend
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-Frontend runs on:
+Frontend
 
-```text
+```
 http://localhost:5173
 ```
 
 ---
 
-## API Endpoints
+#  API Endpoints
 
-### Upload PDF
+## Upload PDF
 
-```http
+```
 POST /upload
 ```
 
-Uploads and indexes a PDF document.
+Response
 
-### Ask Question
+```json
+{
+  "message": "PDF processed",
+  "filename": "Notes.pdf",
+  "chunks": 45
+}
+```
 
-```http
+---
+
+## Ask Question
+
+```
 POST /chat
 ```
 
-Example Request:
+Request
 
 ```json
 {
-  "question": "What is clustering?"
+  "question":"What is DNA?",
+  "pdf":"Biology.pdf"
 }
 ```
 
-Example Response:
+Response
 
 ```json
 {
-  "answer": "Clustering is an unsupervised learning problem...",
-  "sources": [1, 3, 5]
+  "answer":"DNA is Deoxyribonucleic Acid...",
+  "sources":[
+    {
+      "page":8,
+      "file":"Biology.pdf",
+      "preview":"DNA is a double helix..."
+    }
+  ]
 }
 ```
 
 ---
 
-## Future Improvements
+#  Retrieval Pipeline
 
-* Multi-document support
-* Chat history persistence
-* User authentication
-* PDF preview panel
-* Streaming responses
-* Docker deployment
-* Cloud deployment (AWS/GCP/Azure)
-* Citation highlighting
-* Vector database migration to Pinecone/Weaviate
+```
+User Question
+      │
+      ▼
+Semantic Search (FAISS)
+
+      +
+Keyword Search (BM25)
+
+      ▼
+
+Merge Results
+
+      ▼
+
+Cross Encoder Re-ranking
+
+      ▼
+
+Top Relevant Chunks
+
+      ▼
+
+Gemini 2.5 Flash
+
+      ▼
+
+Grounded Answer
+```
 
 ---
 
-## Resume Highlights
+#  Key Features
 
-This project demonstrates:
+### Hybrid Retrieval
 
-* Retrieval-Augmented Generation (RAG)
-* Large Language Model Integration
-* Semantic Search
-* Information Retrieval
-* Vector Databases
-* OCR Processing
-* Full Stack Development
-* API Development
-* React Frontend Development
-* FastAPI Backend Development
+- FAISS retrieves semantically similar chunks.
+- BM25 retrieves exact keyword matches.
+- CrossEncoder re-ranks the retrieved chunks.
 
 ---
 
-## Author
+### OCR Support
 
-Rochi Sri
+If a PDF contains scanned pages or images,
+
+the chatbot automatically switches to OCR using Tesseract.
+
+---
+
+### Multi PDF Support
+
+Each uploaded PDF gets
+
+- Separate vector database
+- Separate chat history
+- Independent retrieval
+
+---
+
+### Source References
+
+Every answer displays
+
+- PDF name
+- Page number
+- Clickable preview of retrieved content
+
+---
+
+### Smart Formatting
+
+The chatbot automatically formats responses into
+
+- Bullet Points
+- Numbered Lists
+- Tables
+- Summaries
+- Paragraphs
+
+based on the user's query.
+
+---
+
+# Future Improvements
+
+- Multi-document querying
+- Streaming responses
+- Authentication
+- PDF viewer with highlighted citations
+- Drag & Drop upload
+- Pinecone / ChromaDB support
+- Docker deployment
+- AWS deployment
+- User accounts
+
+---
+
+#  Skills Demonstrated
+
+- Retrieval-Augmented Generation (RAG)
+- Large Language Models
+- Information Retrieval
+- Semantic Search
+- Hybrid Search
+- OCR
+- Prompt Engineering
+- Vector Databases
+- FastAPI
+- React
+- REST APIs
+- Full Stack Development
+
+---
+
+#  Author
+
+**Rochi Sri**
 
 B.Tech Information Technology
 
-IIIT Allahabad
+Indian Institute of Information Technology Allahabad (IIIT Allahabad)
+
+GitHub: https://github.com/Rochi-2986
+
+LinkedIn: https://www.linkedin.com/in/Rochi-2986/
